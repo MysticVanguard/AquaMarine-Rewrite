@@ -1,0 +1,34 @@
+Metadata-Version: 2.1
+Name: upgradechatpy
+Version: 1.0.5
+Summary: A wrapper around Upgrade.Chat's API
+Home-page: https://github.com/Voxel-Fox-Ltd/UpgradeChat
+Author: Kae Bartlett
+Author-email: kae@voxelfox.co.uk
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: aiohttp
+Provides-Extra: docs
+Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme ; extra == 'docs'
+
+# UpgradeChatPy
+
+UpgradeChatPy is a simple asyncio wrapper around Upgrade.Chat's API.
+
+[Docs are available here](https://upgradechatpy.readthedocs.io/en/latest/).
+
+## Example Usage
+
+```python
+import upgradechat
+client = upgradechat.UpgradeChat(CLIENT_ID, CLIENT_SECRET)
+await client.get_orders(discord_id=123456789123456789)
+```
+
+

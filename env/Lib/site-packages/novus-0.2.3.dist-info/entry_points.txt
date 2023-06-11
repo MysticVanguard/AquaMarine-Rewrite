@@ -1,0 +1,3 @@
+[console_scripts]
+vbu = discord.ext.vbu.__main__:main
+voxelbotutils = discord.ext.vbu.__main__:main
