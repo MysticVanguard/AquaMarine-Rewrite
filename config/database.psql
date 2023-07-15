@@ -1,0 +1,59 @@
+CREATE TABLE IF NOT EXISTS guild_settings(
+    guild_id BIGINT PRIMARY KEY,
+    prefix TEXT
+);
+
+
+CREATE TABLE IF NOT EXISTS user_settings(
+    user_id BIGINT PRIMARY KEY
+);
+
+
+CREATE TABLE IF NOT EXISTS role_list(
+    guild_id BIGINT,
+    role_id BIGINT,
+    key TEXT,
+    value TEXT,
+    PRIMARY KEY (guild_id, role_id, key)
+);
+
+
+CREATE TABLE IF NOT EXISTS channel_list(
+    guild_id BIGINT,
+    channel_id BIGINT,
+    key TEXT,
+    value TEXT,
+    PRIMARY KEY (guild_id, channel_id, key)
+);
+
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id BIGINT,
+    sand_dollars INT DEFAULT 0,
+    doubloons INT DEFAULT 0,
+    passive_sand_dollars INT DEFAULT 0,
+    shop_discount_multiplier INT DEFAULT 0,
+    max_quests INT DEFAULT 3,
+    quest_reward_multiplier INT DEFAULT 100,
+    current_tool TEXT DEFAULT 'fishing_rod',
+    has_net BOOLEAN DEFAULT TRUE,
+    net_type TEXT DEFAULT 'small_wooden',
+    net_hp INT DEFAULT 5,
+    net_durability_multiplier INT DEFAULT 100,
+    bait_amount TEXT DEFAULT '0_0_0_0',
+    rod_double_fish_chance INT DEFAULT 100,
+    rod_rarity_increase_tier INT DEFAULT 1,
+    rod_bait_consumption_chance INT DEFAULT 100,
+    rare_lock_time INT DEFAULT 1,
+    epic_lock_time INT DEFAULT 5,
+    legendary_lock_time INT DEFAULT 10,
+    current_energy INT DEFAULT 100,
+    max_energy INT DEFAULT 100,
+    energy_refresh INT DEFAULT 60,
+    energy_cost INT DEFAULT 10,
+    bait_given_multiplier INT DEFAULT 100,
+    passive_energy INT DEFAULT 0,
+    energy_refund_chance INT DEFAULT 100,
+    fish_bucket_room INT DEFAULT 5,
+    tank_room INT DEFAULT 1,
+    PRIMARY KEY (user_id)
+);

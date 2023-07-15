@@ -74,10 +74,10 @@ owners_ignore_check_failures = true  # Whether or not owners ignore check failur
 
 # This data is passed directly over to asyncpg.connect()
 [database]
-    enabled = false
-    user = "database_username"
-    password = "database_password"
-    database = "database_name"
+    enabled = true
+    user = "postgres"
+    password = "NHsd2017"
+    database = "postgres"
     host = "127.0.0.1"
     port = 5432
 
