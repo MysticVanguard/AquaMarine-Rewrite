@@ -127,7 +127,7 @@ class Fishing(vbu.Cog):
                 new_embed = change_tool(current_tool)
                 await message.edit(embed=new_embed)
             elif chosen_button == "fish":
-                utils.fish(current_tool)
+                await utils.fish(ctx,self.bot,current_tool, user_settings)
 
 
 def setup(bot):
