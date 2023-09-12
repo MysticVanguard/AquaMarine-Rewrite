@@ -49,14 +49,23 @@ bait_values = {
 }
 
 fish_path = "C:\\Users\\johnt\\Pictures\\fish"
-def get_small_fish(rarity_tier):
+
+def get_small_fish(rarity_tier: int) -> _Fish_Species:
     rarity = random.choices(("common","uncommon","rare","epic","legendary","mythic"),rarity_chances[rarity_tier])
     print(rarity[0])
     fish_options = _Fish_Species.get_fish_by_rarity(rarity[0])
     caught_fish = random.choice(tuple(fish_options))
     return caught_fish
 
-async def add_xp(ctx, bot, current_xp, max_xp, level, fish_object, user_settings):
+async def add_xp(
+        ctx: vbu.SlashContext, 
+        bot: vbu.Bot, 
+        current_xp: int, 
+        max_xp: int, 
+        level: int, 
+        fish_object: _Fish_Species, 
+        user_settings: list[dict]
+) -> tuple[int, int, int]:
     rarities = ['legendary', 'epic', 'rare', 'uncommon', 'common']
     current_xp = current_xp+1
     if current_xp==max_xp:
@@ -74,7 +83,13 @@ async def add_xp(ctx, bot, current_xp, max_xp, level, fish_object, user_settings
                 )
     return current_xp,max_xp,level
 
-async def fish(ctx, bot, current_tool, user_settings, user_baits):
+async def fish(
+        ctx: vbu.SlashContext, 
+        bot: vbu.Bot, 
+        current_tool: str, 
+        user_settings: list[dict], 
+        user_baits: list[dict]
+) -> str:
     if current_tool == "Net":
         async with bot.database() as db:
             fish_data = await db("""SELECT * FROM user_fish_inventory WHERE user_id = $1""",

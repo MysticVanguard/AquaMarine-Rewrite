@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, annotations
 from ._fish_type import _FishType
 from ._regions import Region
 from ._fish_classes import Fish_Class
@@ -17,7 +17,21 @@ class _Fish_Species:
     all_species_by_name = {}
     all_species_by_rarity = {}
 
-    def __init__(self, name, rarity, lever, region, fish_class, hp, ad, ar, mr, haste, mana, ability):
+    def __init__(
+            self, 
+            name: str, 
+            rarity: str, 
+            lever: str, 
+            region: str, 
+            fish_class: str, 
+            hp: str, 
+            ad: str, 
+            ar: str, 
+            mr: str, 
+            haste: str, 
+            mana: str, 
+            ability: str
+):
         self.name = name
         self.rarity = rarity
         self.lever = lever
@@ -53,11 +67,11 @@ class _Fish_Species:
         # }
 
     @classmethod
-    def get_fish(cls, name: str):
+    def get_fish(cls, name: str) -> _Fish_Species:
         return cls.all_species_by_name[name]
     
     @classmethod
-    def get_fish_by_rarity(cls, rarity: str):
+    def get_fish_by_rarity(cls, rarity: str) -> list[_Fish_Species]:
         return cls.all_species_by_rarity[rarity]
     
 all_fish = []

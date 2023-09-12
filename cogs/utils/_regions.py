@@ -9,7 +9,17 @@ import os.path
 
 class Region:
     all_regions_by_name = {}
-    def __init__(self, name, breakpoints, keyword, amount, num_turns, trigger, targets, description):
+    def __init__(
+            self, 
+            name: str, 
+            breakpoints: str, 
+            keyword: str, 
+            amount: str, 
+            num_turns: str, 
+            trigger: str, 
+            targets: str, 
+            description: str
+):
         self.name = name
         self.breakpoints = list(map(int, breakpoints.split(',')))
         self.keyword = keyword.split(',')

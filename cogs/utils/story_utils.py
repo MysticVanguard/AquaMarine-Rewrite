@@ -6,7 +6,7 @@ from cogs import utils
 import math
 
 
-async def start_using(ctx, bot):
+async def start_using(ctx: vbu.SlashContext, bot: vbu.Bot) -> None:
 
     embed = discord.Embed(title="Woah There")
     embed.add_field(

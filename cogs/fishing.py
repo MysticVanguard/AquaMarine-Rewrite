@@ -33,7 +33,7 @@ class Fishing(vbu.Cog):
         )
     )
     @commands.bot_has_permissions(send_messages=True)
-    async def fish(self, ctx: commands.Context, tool_type: str = None):
+    async def fish(self, ctx: vbu.SlashContext, tool_type: str = None):
         """fish for a fish
         /fish (optional tool)
         menu with current buffs, current tool

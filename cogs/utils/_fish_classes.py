@@ -9,7 +9,17 @@ import os.path
 
 class Fish_Class:
     all_fish_classes_by_name = {}
-    def __init__(self, name, breakpoints, keyword, amount, decaying, trigger, targets, description):
+    def __init__(
+            self, 
+            name: str, 
+            breakpoints: str, 
+            keyword: str, 
+            amount: str, 
+            decaying: str, 
+            trigger: str, 
+            targets: str, 
+            description: str
+):
         self.name = name
         self.breakpoints = list(map(int, breakpoints.split(',')))
         self.keyword = keyword.split(',')
@@ -22,6 +32,8 @@ class Fish_Class:
     @classmethod
     def get_fish_class(cls, name: str):
         return cls.all_fish_classes_by_name[name]
+    
+    
 all_fish_classes = []
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 

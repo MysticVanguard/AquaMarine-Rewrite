@@ -15,7 +15,7 @@ class Arena(vbu.Cog):
         )
     )
     @commands.bot_has_permissions(send_messages=True)
-    async def test_create(self, ctx: commands.Context):
+    async def test_create(self, ctx: vbu.SlashContext):
         fish_selected = 0
         embed = discord.Embed(title="Created Team!")
         embed.add_field(name="Fish Names", value="No Fish Selected")

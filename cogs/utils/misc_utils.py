@@ -5,9 +5,9 @@ from discord.ext import vbu
 from cogs import utils
 from ._fish import _Fish_Species
 import math
-from PIL import Image
+from PIL import Image, PngImagePlugin
 import io
-
+import typing
 
 EMOJIS = {
     "common_xp_orb": "<:common_xp_orb:1151075696223998002>",
@@ -30,7 +30,7 @@ VALID_ITEMS = [
                "common_bait", "uncommon_bait", "rare_bait", "epic_bait",
             ]
 # This is used to fix fields that are too long (i.e. If someone has too many of one rarity in their fish bucket)
-def get_fixed_field(field):
+def get_fixed_field(field: tuple[str,str]) -> list[tuple[str,str]]:
     """
     Return a list of tuples for the rarity-level in the pagination to fix fields that are too large
     """
@@ -85,11 +85,11 @@ def get_fixed_field(field):
 
 
 def create_bucket_embed(
-    user,
+    user: discord.Member | discord.User,
     field: tuple[str, str],
     page: int,
-    custom_title: None
-):
+    custom_title: str = None
+) -> discord.Embed:
     """
     Creates the embed for the pagination page for the fishbucket
     """
@@ -109,10 +109,17 @@ def create_bucket_embed(
 
 
 # This takes in the ctx, all of the fields for the embed, the user, and the custom title
-async def paginate(ctx, fields, user, select, options=None, custom_str=None):
+async def paginate(
+        ctx: vbu.SlashContext, 
+        fields: list[tuple[str,str]], 
+        user: discord.Member | discord.User, 
+        select: bool, 
+        options: list[str]=None, 
+        custom_str: str=None
+) -> None | str:
 
     # intiiates bot as ctx.bot
-    bot = ctx.bot
+    bot: vbu.Bot = ctx.bot
     # Sets the current index to 1
     curr_index = 1
     # Sets the current field to be the first field
@@ -240,7 +247,14 @@ async def paginate(ctx, fields, user, select, options=None, custom_str=None):
             return await create_select_menu(bot, ctx, options[curr_index-1], "item", "select", True)
 
 
-async def create_select_menu(bot, ctx, option_list, type_noun, type_verb, remove=False):
+async def create_select_menu(
+        bot: vbu.Bot, 
+        ctx: vbu.SlashContext, 
+        option_list: list[str], 
+        type_noun: str, 
+        type_verb: str, 
+        remove: bool =False
+) -> typing.Any:
     """
     This will create a select menu from the given list,
     have the user select one, and return the selection
@@ -302,7 +316,7 @@ async def create_select_menu(bot, ctx, option_list, type_noun, type_verb, remove
     return str(payload.values[0])
 
 
-async def create_modal(bot, Interaction, title, placeholder):
+async def create_modal(bot: vbu.Bot, Interaction: discord.Interaction, title: str, placeholder: str) -> tuple[str, discord.Interaction] | tuple[None, None]:
     """
     Modal
     """
@@ -345,7 +359,7 @@ async def create_modal(bot, Interaction, title, placeholder):
     return given_value, interaction
 
 
-async def sort_by_rarity(user_fish):
+async def sort_by_rarity(user_fish: list[dict]) -> list[_Fish_Species]:
         fish_list = []
         for rarity in ["common", "uncommon", "rare", "epic", "legendary", "mythic"]:
             for fish in user_fish:
@@ -354,7 +368,7 @@ async def sort_by_rarity(user_fish):
                     print(_Fish_Species.get_fish(fish['species']))
         return fish_list
     
-async def create_dropdown_embed(ctx, user, fish_list):
+async def create_dropdown_embed(ctx: vbu.SlashContext, user: discord.Member | discord.User, fish_list: list[_Fish_Species]) -> str | None:
     fish_list_sectioned = []
     fish_sectioned_string = []
     for count, fish in enumerate(fish_list):
@@ -367,7 +381,7 @@ async def create_dropdown_embed(ctx, user, fish_list):
     
     return await paginate(ctx, fish_sectioned_string, user, True, fish_list_sectioned)
 
-async def get_info(ctx, fish):
+async def get_info(ctx: vbu.SlashContext, fish: str) -> None:
     async with vbu.Database() as db:
         user_fish = await db(
             """SELECT * FROM user_fish_inventory WHERE user_id = $1""",
@@ -401,7 +415,7 @@ async def get_info(ctx, fish):
     await ctx.send(embed=embed, file=fish_file)
 
 
-async def create_images(fish, settings):
+async def create_images(fish: list[typing.Any], settings: list[typing.Any]) -> list[PngImagePlugin.PngImageFile]:
     room = settings[0]['tank_room']
     tanks = []
     tank_images = []
@@ -427,7 +441,7 @@ async def create_images(fish, settings):
     
     return tank_images
 
-async def create_tank_embed(ctx, bot, fish, images):
+async def create_tank_embed(ctx: vbu.SlashContext, bot: vbu.Bot, fish: list[typing.Any], images: list[PngImagePlugin.PngImageFile]) -> None:
     fish_list_sectioned = [f"Tank {count+1}" for count in range(len(images))]
     chosen_tank = await create_select_menu(bot, ctx, fish_list_sectioned, "tank", "select", True)
     chosen_tank = int(chosen_tank.split(" ")[1])

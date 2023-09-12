@@ -11,7 +11,7 @@ class Home(vbu.Cog):
 
     @commands.command(application_command_meta=commands.ApplicationCommandMeta())
     @commands.bot_has_permissions(send_messages=True)
-    async def balance(self, ctx: commands.Context):
+    async def balance(self, ctx: vbu.SlashContext):
         async with vbu.Database() as db:
             user_settings = await db(
                 """SELECT * FROM user_settings WHERE user_id = $1""",
@@ -44,7 +44,7 @@ class Home(vbu.Cog):
             ]
     ))
     @commands.bot_has_permissions(send_messages=True)
-    async def inventory(self, ctx: commands.Context, type: str):
+    async def inventory(self, ctx: vbu.SlashContext, type: str):
         
         if type == "fish":
             async with vbu.Database() as db:
@@ -89,7 +89,7 @@ class Home(vbu.Cog):
     
     @commands.command(application_command_meta=commands.ApplicationCommandMeta())
     @commands.bot_has_permissions(send_messages=True)
-    async def add_to_tank(self, ctx: commands.Context):
+    async def add_to_tank(self, ctx: vbu.SlashContext):
         rarities = ['legendary', 'epic', 'rare', 'uncommon', 'common']
         async with vbu.Database() as db:
             user_fish = await db(
