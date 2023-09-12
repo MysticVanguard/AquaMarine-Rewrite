@@ -25,6 +25,10 @@ EMOJIS = {
     "metal_net": "<:metal_net:1151076208088469584>",
 }
 
+VALID_ITEMS = [
+                "common_xp_orb", "uncommon_xp_orb", "rare_xp_orb", "epic_xp_orb", "legendary_xp_orb", "mythic_xp_orb",
+               "common_bait", "uncommon_bait", "rare_bait", "epic_bait",
+            ]
 # This is used to fix fields that are too long (i.e. If someone has too many of one rarity in their fish bucket)
 def get_fixed_field(field):
     """

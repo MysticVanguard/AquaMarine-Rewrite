@@ -74,6 +74,18 @@ class Home(vbu.Cog):
                 return await ctx.send("You have no fish in tanks!")
             images = await utils.create_images(user_fish, user_settings)
             await utils.create_tank_embed(ctx, self.bot, user_fish, images)
+        elif type == "item":
+            async with vbu.Database() as db:
+                user_items = await db(
+                    """SELECT * FROM user_item_inventory WHERE user_id = $1""",
+                    ctx.author.id
+                )
+            embed=discord.Embed(title="Items")
+            for item in utils.VALID_ITEMS:
+                embed.add_field(name=f"{utils.EMOJIS[item]} {item.replace('_', ' ').title()}", value=user_items[0][item])
+            await ctx.send(embed=embed)
+
+                
     
     @commands.command(application_command_meta=commands.ApplicationCommandMeta())
     @commands.bot_has_permissions(send_messages=True)
