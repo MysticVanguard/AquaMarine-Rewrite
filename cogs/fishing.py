@@ -79,6 +79,10 @@ class Fishing(vbu.Cog):
                 """SELECT * FROM user_settings WHERE user_id = $1""",
                 ctx.author.id,
             )
+            user_baits = await db(
+                """SELECT * FROM user_item_inventory WHERE user_id = $1""",
+                ctx.author.id
+            )
         components = discord.ui.MessageComponents()
         current_tool = 'Net' #user_settings[0]['current_tool'].replace("_"," ").title()
         if tool_type:
@@ -103,18 +107,10 @@ class Fishing(vbu.Cog):
                     components.get_component('fish').disable()
                     embed.add_field(name="Your net has broken!", value="** **")
             if current_tool == "Fishing Rod":
-                bait = await utils.get_bait(user_settings[0]['bait_amount'])
+                bait_string = f"{user_baits[0]['common_bait']}/{user_baits[0]['uncommon_bait']}/{user_baits[0]['rare_bait']}/{user_baits[0]['epic_bait']}"
                 embed.add_field(name="Tool Explanation", value="The fishing rod is used to catch fish to sell (Using higher quality bait gets you high quality fish). Not for adding fish to collection or getting bait", inline=False)
-                bait_type_string = ""
-                bait_amount_string = ""
-                for type_bait in bait[0]:
-                    bait_type_string += f"{type_bait}"
-                    bait_amount_string += f"{bait[1][bait[0].index(type_bait)]}"
-                    if type_bait != bait[0][len(bait[0])-1]:
-                        bait_type_string+="/"
-                        bait_amount_string+="/"
-                embed.add_field(name="Bait Type", value=bait_type_string)
-                embed.add_field(name="Bait Amount", value=bait_amount_string)
+                embed.add_field(name="Bait Type", value="Common/Uncommon/Rare/Epic")
+                embed.add_field(name="Bait Amount", value=bait_string)
             if current_tool == "Speargun WIP":
                 embed.add_field(name="Tool Explanation", value="The speargun is used to catch fish for bait. Not for adding fish to collection or selling.", inline=False)
                 embed.add_field(name="Current Energy", value=user_settings[0]['current_energy'])
@@ -159,11 +155,15 @@ class Fishing(vbu.Cog):
                 )
                 while keep_fishing:
                     
-                    returned_message = await utils.fish(ctx,self.bot,current_tool, user_settings)
+                    returned_message = await utils.fish(ctx,self.bot,current_tool, user_settings, user_baits)
                     async with vbu.Database() as db:
                         user_settings = await db(
                             """SELECT * FROM user_settings WHERE user_id = $1""",
                             ctx.author.id,
+                        )
+                        user_baits = await db(
+                            """SELECT * FROM user_item_inventory WHERE user_id = $1""",
+                            ctx.author.id
                         )
                     new_embed = await change_tool(current_tool, user_settings)
                     await message.edit(embed=new_embed, components=components)
@@ -171,7 +171,7 @@ class Fishing(vbu.Cog):
 
                     try:
                         fish_chosen_button_payload = await self.bot.wait_for(
-                            "component_interaction", timeout=60.0, check=lambda p: p.user.id == ctx.author.id)
+                            "component_interaction", timeout=60.0, check=lambda p: p.user.id == ctx.author.id and p.message.id == fish_message.id)
                         chosen_button = fish_chosen_button_payload.component.custom_id.lower()
                     except asyncio.TimeoutError:
                         keep_fishing = False
@@ -183,6 +183,7 @@ class Fishing(vbu.Cog):
             elif chosen_button == "close_menu":
                 await chosen_button_payload.response.defer_update()
                 menu_open = False
+                await message.delete()
             
         
 

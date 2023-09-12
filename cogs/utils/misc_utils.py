@@ -440,13 +440,3 @@ async def create_tank_embed(ctx, bot, fish, images):
         else:
             break
     await ctx.send(embed=embed, file=tank_file)
-
-def change_bait(baits, rarity):
-    rarities = ["common", "uncommon", "rare", "epic"]
-    baits =list(map(int, baits.split("_")))
-    baits[rarities.index(rarity)] += 1
-    return f"{baits[0]}_{baits[1]}_{baits[2]}_{baits[3]}"
-
-def remove_bait(baits, rarity):
-    baits[1][baits[0].index(rarity)] -= 1
-    return f"{baits[1][0]}_{baits[1][1]}_{baits[1][2]}_{baits[1][3]}"

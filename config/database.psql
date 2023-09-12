@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS user_settings (
     net_type TEXT DEFAULT 'small_wooden',
     net_hp INT DEFAULT 5,
     net_durability_mod INT DEFAULT 0,
-    bait_amount TEXT DEFAULT '0_0_0_0',
     rod_double_fish_chance INT DEFAULT 0,
     rarity_increase_tier INT DEFAULT 1,
     rod_bait_consumption_chance INT DEFAULT 100,
@@ -84,5 +83,22 @@ CREATE TABLE IF NOT EXISTS user_fish_inventory (
     current_xp INT DEFAULT 0,
     max_xp INT DEFAULT 5,
     in_tank BOOLEAN DEFAULT FALSE,
-    item TEXT DEFAULT ''
+    item TEXT DEFAULT '',
+    in_team BOOLEAN DEFAULT FALSE,
+    team_number INT DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS user_item_inventory (
+    user_id BIGINT,
+    common_bait INT DEFAULT 0,
+    uncommon_bait INT DEFAULT 0,
+    rare_bait INT DEFAULT 0,
+    epic_bait INT DEFAULT 0,
+    common_xp_orb INT DEFAULT 0,
+    uncommon_xp_orb INT DEFAULT 0,
+    rare_xp_orb INT DEFAULT 0,
+    epic_xp_orb INT DEFAULT 0,
+    legendary_xp_orb INT DEFAULT 0,
+    mythic_xp_orb INT DEFAULT 0,
+    PRIMARY KEY (user_id)
+)

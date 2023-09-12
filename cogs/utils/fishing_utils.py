@@ -42,10 +42,10 @@ fish_prices = {
         "mythic": 50
         }
 bait_values = {
-    "Common": 1,
-    "Uncommon": 2,
-    "Rare": 3,
-    "Epic": 4,
+    "common": 1,
+    "uncommon": 2,
+    "rare": 3,
+    "epic": 4,
 }
 
 fish_path = "C:\\Users\\johnt\\Pictures\\fish"
@@ -74,7 +74,7 @@ async def add_xp(ctx, bot, current_xp, max_xp, level, fish_object, user_settings
                 )
     return current_xp,max_xp,level
 
-async def fish(ctx, bot, current_tool, user_settings):
+async def fish(ctx, bot, current_tool, user_settings, user_baits):
     if current_tool == "Net":
         async with bot.database() as db:
             fish_data = await db("""SELECT * FROM user_fish_inventory WHERE user_id = $1""",
@@ -168,7 +168,7 @@ async def fish(ctx, bot, current_tool, user_settings):
             
     if current_tool == "Fishing Rod":
         bait_modifier = 0
-        bait = await get_bait(user_settings[0]['bait_amount'])
+        bait = (["epic","rare","uncommon","common"], [user_baits[0]['epic_bait'],user_baits[0]['rare_bait'],user_baits[0]['uncommon_bait'],user_baits[0]['common_bait']])
         used_bait = "no"
         for bait_type in bait[0]:
             if bait[1][bait[0].index(bait_type)] != 0:
@@ -177,8 +177,8 @@ async def fish(ctx, bot, current_tool, user_settings):
             bait_modifier = bait_values[used_bait]
             async with bot.database() as db:
                 await db(
-                    """UPDATE user_settings SET bait_amount = $1 WHERE user_id = $2""",
-                    utils.remove_bait(bait, used_bait),
+                    """UPDATE user_item_inventory SET {0} = $1 WHERE user_id = $2""".format(f"{used_bait}_bait"),
+                    user_baits[0][f"{used_bait}_bait"]-1,
                     ctx.author.id
                 )
         caught_fish = get_small_fish(user_settings[0]['rarity_increase_tier']+bait_modifier)
@@ -195,7 +195,3 @@ async def fish(ctx, bot, current_tool, user_settings):
                         user_settings[0]["sand_dollars"]+fish_prices[caught_fish.rarity],
                         ctx.author.id)
         return f"You have {user_settings[0]['sand_dollars']+fish_prices[caught_fish.rarity]} total sand dollars!"
-async def get_bait(bait_string: str):
-    baits = bait_string.split("_")
-    baits = list(map(int, baits))
-    return [["Common", "Uncommon", "Rare", "Epic"], baits]

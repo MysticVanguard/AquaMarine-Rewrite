@@ -34,9 +34,9 @@ class FishMarket(Category):
     def __init__(self):
         super().__init__("Baits")
 
-        self.add_item(Item("Common Bait", 10, ("bait", "common")))
-        self.add_item(Item("Uncommon Bait", 20, ("bait", "uncommon")))
-        self.add_item(Item("Rare Bait", 30, ("bait", "rare")))
+        self.add_item(Item("Common Bait", 10, ("bait", "common_bait")))
+        self.add_item(Item("Uncommon Bait", 20, ("bait", "uncommon_bait")))
+        self.add_item(Item("Rare Bait", 30, ("bait", "rare_bait")))
 
 class SkinMarket(Category):
 

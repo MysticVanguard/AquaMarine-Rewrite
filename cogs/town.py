@@ -80,8 +80,13 @@ class Town(vbu.Cog):
                                      settings[0]['tank_room']+1,
                                      ctx.author.id)
                         elif item.ref[0] == "bait":
-                            await db("""UPDATE user_settings SET bait_amount = $1 WHERE user_id = $2""",
-                                    utils.change_bait(settings[0]['bait_amount'], item.ref[1]),
+                            items = await db(
+                                """SELECT * FROM user_item_inventory WHERE user_id = $1""",
+                                ctx.author.id
+                            )
+
+                            await db("""UPDATE user_item_inventory SET {0} = $1 WHERE user_id = $2""".format(item.ref[1]),
+                                    items[0][item.ref[1]]+1,
                                      ctx.author.id)
                         if not cant_buy:
                             item_message = await ctx.send(f"You bought 1 {item.display_name}", ephemeral = True)
