@@ -12,15 +12,15 @@ owners_ignore_check_failures = true  # Whether or not owners ignore check failur
 
 # Event webhook information - some of the events (noted) will be sent to the specified url
 [event_webhook]
-    event_webhook_url = ""
+    event_webhook_url = "https://discord.com/api/webhooks/952605690495643709/WBMKvka-668VkQXvalMOpAv5eWupDn3HewaCcJ3FnBCuc1TudyOSzrBIOTYqy6p6X4xU"
     [event_webhook.events]  # If you use true then your `event_webhook_url` will be used. If it's a string it'll assume that's a different webhook
-        guild_join = false
-        guild_remove = false
+        guild_join = true
+        guild_remove = true
         shard_connect = false
         shard_disconnect = false
         shard_ready = false
         bot_ready = false
-        unhandled_error = false
+        unhandled_error = true
 
 # The intents that the bot should start with
 [intents]
