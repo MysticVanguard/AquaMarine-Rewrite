@@ -4,7 +4,7 @@ import discord
 from discord.ext import vbu
 from cogs import utils
 import math
-from ._fish import _Fish_Species
+from ._fish import _Fish_Species, _Large_Fish_Species
 
 rarity_chances = [
     (0,0,0,0,0,0),
@@ -48,11 +48,41 @@ bait_values = {
     "epic": 4,
 }
 
+
+
 fish_path = "C:\\Users\\johnt\\Pictures\\fish"
+
+
+def get_large_fish(rarity_tier: int) -> _Large_Fish_Species:
+    rarity = random.choices(("common","uncommon","rare","epic","epic","epic"),rarity_chances[rarity_tier])
+    fish_options = _Large_Fish_Species.get_fish_by_rarity(rarity[0])
+    caught_fish = random.choice(tuple(fish_options))
+    return caught_fish
+
+
+async def gut_fish(ctx: vbu.SlashContext, bot: vbu.Bot, fish: _Large_Fish_Species, user_baits: list[dict], settings):
+    item = random.choice(utils.items["Tier 1"])
+    bait_gotten = int(3*(settings[0]['bait_given_multiplier']/100))
+    async with bot.database() as db:
+        await db(
+            """UPDATE user_item_inventory SET {0} = {0} + $2 WHERE user_id = $1""".format(f"{fish.rarity}_bait"),
+            ctx.author.id,
+            bait_gotten
+        )
+        await db(
+            """UPDATE user_item_inventory SET {0} = {0} + 1 WHERE user_id = $1""".format(item),
+            ctx.author.id
+        )
+
+        
+    bait_string = f"{bait_gotten} {fish.rarity.title()} Bait\n"
+    item_string = f"1 {item.replace('_', ' ').title()}\n"
+    return bait_string, item_string
+    
+
 
 def get_small_fish(rarity_tier: int) -> _Fish_Species:
     rarity = random.choices(("common","uncommon","rare","epic","legendary","mythic"),rarity_chances[rarity_tier])
-    print(rarity[0])
     fish_options = _Fish_Species.get_fish_by_rarity(rarity[0])
     caught_fish = random.choice(tuple(fish_options))
     return caught_fish
@@ -88,26 +118,61 @@ async def fish(
         bot: vbu.Bot, 
         current_tool: str, 
         user_settings: list[dict], 
-        user_baits: list[dict]
+        user_baits: list[dict],
+        curr_money: int
 ) -> str:
     if current_tool == "Net":
+
+        net_hp = user_settings[0]["net_hp"]
+        net_type = user_settings[0]["net_type"]
+        
+        if user_settings[0]['net_type'] == "none":
+            return "You have no net! Use /shop to buy a new one!", 0
+        if net_hp == 0:
+            net_type = "none"
+            async with bot.database() as db:
+                await db("""UPDATE user_settings SET net_type = $1, has_net = FALSE, net_hp = $2 WHERE user_id = $3""",
+                            net_type,
+                            net_hp,
+                            ctx.author.id)
+            return "You have no net! Use /shop to buy a new one!", 0
+
+
         async with bot.database() as db:
             fish_data = await db("""SELECT * FROM user_fish_inventory WHERE user_id = $1""",
                                     ctx.author.id)
-        if user_settings[0]['net_type'] == "none":
-            return "You have no net!"
+            user_quests = await db("""SELECT * FROM user_quests WHERE user_id = $1""",
+                                   ctx.author.id)
+            
+
         caught_fish = get_small_fish(user_settings[0]['rarity_increase_tier'])
-        if user_settings[0]['user_id'] == 449966150898417664:
-            caught_fish = _Fish_Species.get_fish("drakefish")
-        net_hp = user_settings[0]["net_hp"]
-        net_type = user_settings[0]["net_type"]
+
         caught_check = False
+
+
+        quest_fish = []
+        for quest in user_quests:
+            if quest["total_amount"] - quest["amount"] > 0:
+                quest_fish.append(quest["fish_species"])
+        quest_string = ""
+        if caught_fish.name in quest_fish:
+            async with bot.database() as db:
+                await db("""UPDATE user_quests SET amount = $1 WHERE user_id = $2 AND fish_species = $3 AND time_expires = $4""",
+                         user_quests[quest_fish.index(caught_fish.name)]["amount"]+1,
+                         ctx.author.id,
+                         caught_fish.name,
+                         user_quests[quest_fish.index(caught_fish.name)]["time_expires"])
+            quest_string += "__Quest Fish Caught!__"
+
+        
         for fish in fish_data:
             if fish['species'] == caught_fish.name:
                 caught_check = True
                 break
+
+        
         embed = discord.Embed()
-        embed.add_field(name="You Caught:", value=f"{caught_fish.name.replace('_', ' ').title()} ({caught_fish.rarity.title()})")
+        embed.add_field(name="You Caught:", value=f"{caught_fish.name.replace('_', ' ').title()} ({caught_fish.rarity.title()}) {quest_string}")
         embed.add_field(name="Fish Owned:", value=f"{caught_check}")
         embed.add_field(name="Passive Tank Bonus", value=caught_fish.lever.replace("_", " ").title(), inline=False)
         if (caught_fish.rarity in ["uncommon", "rare", "epic", "legendary", "mythic"]):
@@ -123,38 +188,29 @@ async def fish(
                 class_descriptions += f"{fish_class.description}\n"
             embed.add_field(name=region_names, value=region_descriptions,inline=False)
             embed.add_field(name=class_names, value=class_descriptions,inline=False)
-
-        
         components = discord.ui.MessageComponents(
             discord.ui.ActionRow(
                 discord.ui.Button(custom_id="catch", label="Catch"),
                 discord.ui.Button(custom_id="release", label="Release")
             )
         )
-        if net_hp == 0:
-            net_type = "none"
-            async with bot.database() as db:
-                await db("""UPDATE user_settings SET net_type = $1, has_net = FALSE, net_hp = $2 WHERE user_id = $3""",
-                            net_type,
-                            net_hp,
-                            ctx.author.id)
-            return "You have no net!"
         fish_file = discord.File(fish_path+"\\"+caught_fish.rarity+"\\"+caught_fish.name+"-export.png", "new_fish.png")
         embed.set_image(url="attachment://new_fish.png")
         fish_message = await ctx.send(embed=embed, file=fish_file, components=components)
-        def button_check(payload):
-            if payload.message.id != fish_message.id:
-                return False
-            return payload.user.id == ctx.author.id
+
         
         fish_button_payload = await bot.wait_for(
-            "component_interaction", check=button_check
+            "component_interaction", 
+            check=lambda p: p.user.id == ctx.author.id and p.message.id == fish_message.id
         )
         chosen_button = fish_button_payload.component.custom_id
 
+
         if chosen_button == "release":
             await fish_message.delete()
-            return "Fish has been released!"
+            return "Fish has been released!", 0
+        
+
         elif chosen_button == "catch":
             await fish_message.delete()
             owned_fish = None
@@ -166,6 +222,11 @@ async def fish(
                 await db("""UPDATE user_settings SET net_hp = $1 WHERE user_id = $2""",
                             net_hp-1,
                             ctx.author.id)
+                if net_hp-1 == 0:
+                    net_type = "none"
+                    await db("""UPDATE user_settings SET net_type = $1, has_net = FALSE WHERE user_id = $2""",
+                                net_type,
+                                ctx.author.id)
                 if owned_fish:
                     new_xp, new_max_xp,new_level = await add_xp(ctx, bot, owned_fish['current_xp'], owned_fish['max_xp'], owned_fish['level'], caught_fish, user_settings)
                     await db("""UPDATE user_fish_inventory SET current_xp = $1, max_xp = $2, level = $3 WHERE user_id = $4 AND species = $5""",
@@ -174,39 +235,68 @@ async def fish(
                              new_level,
                              ctx.author.id,
                              caught_fish.name)
-                    return f"Your fish has been upgraded: Level {new_level} {new_xp}/{new_max_xp}"
+                    return f"Your fish has been upgraded: Level {new_level} {new_xp}/{new_max_xp}", 0
                 else:
                     await db("""INSERT INTO user_fish_inventory(user_id, name, species) VALUES ($1, 'WIP', $2)""",
                                 ctx.author.id,
                                 caught_fish.name)
-                    return "Your fish has been added to your collection!"
+                    return "Your fish has been added to your collection!", 0
             
+
     if current_tool == "Fishing Rod":
+
+        catches = random.choices((1,2), (1-(user_settings[0]['rod_double_fish_chance']/100),(user_settings[0]['rod_double_fish_chance']/100)))
         bait_modifier = 0
         bait = (["epic","rare","uncommon","common"], [user_baits[0]['epic_bait'],user_baits[0]['rare_bait'],user_baits[0]['uncommon_bait'],user_baits[0]['common_bait']])
         used_bait = "no"
         for bait_type in bait[0]:
             if bait[1][bait[0].index(bait_type)] != 0:
                 used_bait = bait_type
+                break
         if used_bait != "no":
             bait_modifier = bait_values[used_bait]
+            removed = 1
+            consumed_chance = random.randint(1,100)
+            if consumed_chance > user_settings[0]['rod_bait_consumption_chance']:
+                removed = 0
             async with bot.database() as db:
                 await db(
                     """UPDATE user_item_inventory SET {0} = $1 WHERE user_id = $2""".format(f"{used_bait}_bait"),
-                    user_baits[0][f"{used_bait}_bait"]-1,
+                    user_baits[0][f"{used_bait}_bait"]-removed,
                     ctx.author.id
                 )
-        caught_fish = get_small_fish(user_settings[0]['rarity_increase_tier']+bait_modifier)
+
+        for _ in catches:
+            caught_fish = get_small_fish(user_settings[0]['rarity_increase_tier']+bait_modifier)
+
+            embed = discord.Embed()
+            embed.add_field(name="You Caught:", value=f"{caught_fish.name.replace('_', ' ').title()} ({caught_fish.rarity.title()})\nUsed {used_bait} bait")
+            embed.add_field(name="Sold fish for:", value=f"{fish_prices[caught_fish.rarity]} Sand Dollars.")
+            fish_file = discord.File(fish_path+"\\"+caught_fish.rarity+"\\"+caught_fish.name+"-export.png", "new_fish.png")
+            embed.set_image(url="attachment://new_fish.png")
+            fish_message = await ctx.send(embed=embed, file=fish_file)
+            await fish_message.delete(delay=5)
+            curr_money += fish_prices[caught_fish.rarity]
+        return f"You have {curr_money} total sand dollars!", curr_money
+
+    if current_tool == "Speargun":
+        if curr_money-10 <= 0:
+            return "You have no energy!", curr_money
+        caught_fish = get_large_fish(user_settings[0]['rarity_increase_tier'])
+        bait_string, item_string = await gut_fish(ctx, bot, caught_fish, user_baits, user_settings)
+        
+        energy_refund = random.choices((False,True), (1-(user_settings[0]['energy_refund_chance']/100),(user_settings[0]['energy_refund_chance']/100)))[0]
+        if not energy_refund:
+            curr_money -= 10
+
 
         embed = discord.Embed()
-        embed.add_field(name="You Caught:", value=f"{caught_fish.name.replace('_', ' ').title()} ({caught_fish.rarity.title()})\nUsed {used_bait} bait")
-        embed.add_field(name="Sold fish for:", value=f"{fish_prices[caught_fish.rarity]} Sand Dollars.")
-        fish_file = discord.File(fish_path+"\\"+caught_fish.rarity+"\\"+caught_fish.name+"-export.png", "new_fish.png")
-        embed.set_image(url="attachment://new_fish.png")
-        fish_message = await ctx.send(embed=embed, file=fish_file)
+        embed.add_field(name="You Caught:", value=f"{caught_fish.name.replace('_', ' ').title()} ({caught_fish.rarity.title()})")
+        embed.add_field(name="Gut fish for:", value=f"{item_string}\n{bait_string}")
+        fish_message = await ctx.send(embed=embed)
         await fish_message.delete(delay=5)
-        async with bot.database() as db:
-            await db("""UPDATE user_settings SET sand_dollars = $1 WHERE user_id = $2""",
-                        user_settings[0]["sand_dollars"]+fish_prices[caught_fish.rarity],
-                        ctx.author.id)
-        return f"You have {user_settings[0]['sand_dollars']+fish_prices[caught_fish.rarity]} total sand dollars!"
+
+        if energy_refund:
+            return f"You used no energy!", curr_money
+        else:
+            return f"You have {curr_money} energy left!", curr_money

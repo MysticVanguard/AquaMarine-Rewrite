@@ -23,12 +23,34 @@ EMOJIS = {
     "wooden_net": "<:wooden_net:1151076184885571615>",
     "plastic_net": "<:plastic_net:1151076197833396266>",
     "metal_net": "<:metal_net:1151076208088469584>",
+    "coral": "<:coral:1174244030792609883>",
+    "shell": "<:shell:1174244037050511380>",
+    "crab_claw": "<:crab_claw:1174244031572746260>",
+    "pebble": "<:pebble:1174244032394821723>",
+    "scale": "<:scale:1174244034831712296>",
+    "seaweed": "<:seaweed:1174244035460878378>",
+    "tire": "<:tire:1174244039181221980>",
+    "plastic_bag": "<:plastic_bag:1174244033661505537>",
+    "boot": "<:boot:1174244028410249286>",
 }
 
 VALID_ITEMS = [
-                "common_xp_orb", "uncommon_xp_orb", "rare_xp_orb", "epic_xp_orb", "legendary_xp_orb", "mythic_xp_orb",
-               "common_bait", "uncommon_bait", "rare_bait", "epic_bait",
+                "common_xp_orb", "uncommon_xp_orb", "rare_xp_orb", 
+                "epic_xp_orb", "legendary_xp_orb", "mythic_xp_orb", 
+                "common_bait", "uncommon_bait", "rare_bait", "epic_bait", 
+                "coral", "shell", "crab_claw", "pebble", "scale", "seaweed", 
+                "tire", "plastic_bag", "boot"
             ]
+
+
+
+ranks = ["Iron 1", "Iron 2", "Iron 3", "Iron 4", 
+         "Bronze 1", "Bronze 2", "Bronze 3", "Bronze 4", 
+         "Silver 1", "Silver 2", "Silver 3", "Silver 4",
+         "Gold 1", "Gold 2", "Gold 3", "Gold 4",
+         "Platinum 1", "Platinum 2", "Platinum 3", "Platinum 4", 
+         "Diamond 1", "Diamond 2", "Diamond 3", "Diamond 4"]
+skin_common_path = "C://Users//johnt//Pictures//fish//skins//"
 # This is used to fix fields that are too long (i.e. If someone has too many of one rarity in their fish bucket)
 def get_fixed_field(field: tuple[str,str]) -> list[tuple[str,str]]:
     """
@@ -365,19 +387,18 @@ async def sort_by_rarity(user_fish: list[dict]) -> list[_Fish_Species]:
             for fish in user_fish:
                 if _Fish_Species.get_fish(fish['species']).rarity == rarity:
                     fish_list.append(_Fish_Species.get_fish(fish['species']))
-                    print(_Fish_Species.get_fish(fish['species']))
         return fish_list
     
 async def create_dropdown_embed(ctx: vbu.SlashContext, user: discord.Member | discord.User, fish_list: list[_Fish_Species]) -> str | None:
     fish_list_sectioned = []
     fish_sectioned_string = []
     for count, fish in enumerate(fish_list):
-        if count/25==0:
+        if count%25==0:
             fish_list_sectioned.append([fish.name.replace("_", " ").title()])
-            fish_sectioned_string.append(["Fish Inventory", "(" + fish.rarity[0] + ") " + fish.name.replace("_", " ").title()])
+            fish_sectioned_string.append(["Fish Inventory\n(Rarity) Name - Lever", f"({fish.rarity[0]}) **{fish.name.replace('_', ' ').title()[:13]}** - *{fish.lever.replace('_', ' ').title()}"[:39].rstrip(" ")+"*"])
         else:
             fish_list_sectioned[int(count/25)].append(fish.name.replace("_", " ").title())
-            fish_sectioned_string[int(count/25)][1] += "\n(" + fish.rarity[0] + ") " + fish.name.replace("_", " ").title()
+            fish_sectioned_string[int(count/25)][1] += f"\n({fish.rarity[0]}) **{fish.name.replace('_', ' ').title()[:13]}** - *{fish.lever.replace('_', ' ').title()}"[:39].rstrip(" ")+"*"
     
     return await paginate(ctx, fish_sectioned_string, user, True, fish_list_sectioned)
 
@@ -387,6 +408,23 @@ async def get_info(ctx: vbu.SlashContext, fish: str) -> None:
             """SELECT * FROM user_fish_inventory WHERE user_id = $1""",
             ctx.author.id,
         )
+        user_items = await db(
+            """SELECT * FROM user_item_inventory WHERE user_id = $1""",
+            ctx.author.id,
+        )
+        user_settings = await db(
+            """SELECT * FROM user_settings WHERE user_id = $1""",
+            ctx.author.id
+        )
+    components = discord.ui.MessageComponents(
+        discord.ui.ActionRow(
+            discord.ui.Button(custom_id = "add_fish", label="Add fish to tank"),
+            discord.ui.Button(custom_id = "remove_fish", label="Remove fish from tank (Costs 25 Sand Dollars)"),
+            discord.ui.Button(custom_id = "add_xp", label="Add XP to fish"),
+            discord.ui.Button(custom_id = "change_skin", label="Change fish's skin"),
+        )
+    )
+    
     fish_path = "C:\\Users\\johnt\\Pictures\\fish"
     fish_species = _Fish_Species.get_fish(fish.replace(" ", "_").lower())
     user_fish_data = None
@@ -394,12 +432,36 @@ async def get_info(ctx: vbu.SlashContext, fish: str) -> None:
         if single_fish['species'] == fish.replace(" ", "_").lower():
             user_fish_data = single_fish
             break
+    async with vbu.Database() as db:
+        fish_skin = await db(
+        """SELECT * FROM user_skin_inventory WHERE user_id = $1 AND name = $2 AND fish = $3""",
+        ctx.author.id,
+        user_fish_data['skin'],
+        user_fish_data['species']
+            
+        )
+    if user_items[0][f'{fish_species.rarity}_xp_orb'] == 0:
+        components.get_component("add_xp").disable()
+    if user_fish_data['in_tank'] or user_fish_data['in_team']:
+        components.get_component("add_fish").disable()
+    if user_settings[0]['sand_dollars'] < 25 or not user_fish_data['in_tank']:
+        components.get_component("remove_fish").disable()
     embed = discord.Embed(title=f"{fish}")
+    if user_fish_data['skin'] == "Normal":
+        fish_file = discord.File(fish_path+"\\"+fish_species.rarity+"\\"+fish_species.name+"-export.png", "new_fish.png")
+    else:
+        type = "png"
+        if fish_skin[0]['tier'] == 3:
+            type = "gif"
+        fish_file=discord.File(fish_path+"\\skins\\"+user_fish_data['skin']+"\\"+fish_species.name+"_"+user_fish_data['skin'].lower()+"-export."+type, "new_fish.png")
     if (fish_species.rarity in ["uncommon", "rare", "epic", "legendary", "mythic"]):
         region_names = ""
         region_descriptions = ""
         class_names = ""
         class_descriptions = ""
+        item = "None"
+        if user_fish_data['item']:
+            item = user_fish_data['item']
         for region in fish_species.region:
             region_names += f"{region.name.replace('_', ' ').title()}\n"
             region_descriptions += f"{region.description}\n"
@@ -408,18 +470,111 @@ async def get_info(ctx: vbu.SlashContext, fish: str) -> None:
             class_descriptions += f"{fish_class.description}\n"
         embed.add_field(name=region_names, value=region_descriptions,inline=False)
         embed.add_field(name=class_names, value=class_descriptions,inline=False)
+        embed.add_field(name="Item Equipped", value=item)
+        embed.add_field(name="In Team", value=user_fish_data['in_team'])
     embed.add_field(name="Passive Bonus", value=fish_species.lever.replace("_", " ").title())
-    fish_file = discord.File(fish_path+"\\"+fish_species.rarity+"\\"+fish_species.name+"-export.png", "new_fish.png")
     embed.set_image(url="attachment://new_fish.png")
     embed.add_field(name=f"Level {user_fish_data['level']}: {user_fish_data['current_xp']}/{user_fish_data['max_xp']} XP", value=f"In Tank: {user_fish_data['in_tank']}")
-    await ctx.send(embed=embed, file=fish_file)
+    info_message = await ctx.send(embed=embed, file=fish_file, components = components)
+    try:
+        fish_chosen_button_payload = await ctx.bot.wait_for(
+            "component_interaction", timeout=60.0, check=lambda p: p.user.id == ctx.author.id and p.message.id == info_message.id)
+        chosen_button = fish_chosen_button_payload.component.custom_id.lower()
+        await fish_chosen_button_payload.response.defer_update()
+        if chosen_button == "add_fish":
+            rarities = ['legendary', 'epic', 'rare', 'uncommon', 'common']
+            async with vbu.Database() as db:
+                fish_in_tanks = await db(
+                    """SELECT * FROM user_fish_inventory WHERE user_id = $1 AND in_tank = True""",
+                    ctx.author.id
+                )
+            if len(fish_in_tanks) >= user_settings[0]['tank_room']:
+                return await ctx.send("You have no tank room!")
+            async with vbu.Database() as db:
+                db_call = "UPDATE user_settings SET {0} = $1 + {1} WHERE user_id = $2"
+                lever_info = utils.lever_info[fish_species.lever]
+                
+                await db(
+                    db_call.format(fish_species.lever, 
+                            lever_info[0]*math.ceil(user_fish_data['level']/lever_info[1][rarities.index(fish_species.rarity)])), 
+                            user_settings[0][fish_species.lever], 
+                            ctx.author.id
+                )
+                await db(
+                    """UPDATE user_fish_inventory SET in_tank = True WHERE user_id = $1 and species = $2""",
+                    ctx.author.id,
+                    fish.replace(" ", "_").lower()
+                )
+            await ctx.send("Successfully added to tank.")
+        elif chosen_button == "add_xp":
+            current, max, level = await utils.add_xp(ctx, ctx.bot, user_fish_data['current_xp'], user_fish_data['max_xp'], user_fish_data['level'], fish_species, user_settings)
+            async with vbu.Database() as db:
+                await db(
+                    """UPDATE user_fish_inventory SET current_xp = $1, max_xp = $2, level = $3 WHERE user_id = $4 and species = $5""",
+                    current,
+                    max,
+                    level,
+                    ctx.author.id,
+                    fish.replace(" ", "_").lower()
+                )
+                await db(
+                    """UPDATE user_item_inventory SET {0} = $1 WHERE user_id = $2""".format(f"{fish_species.rarity}_xp_orb"),
+                    user_items[0][f'{fish_species.rarity}_xp_orb'] - 1,
+                    ctx.author.id                    
+                )
+            await ctx.send(f"Successfully gave your fish 1 xp, they are now Level {level} {current}/{max} XP")
+        elif chosen_button == "remove_fish":
+            rarities = ['legendary', 'epic', 'rare', 'uncommon', 'common']
+            async with vbu.Database() as db:
+                db_call = "UPDATE user_settings SET {0} = $1 - {1} WHERE user_id = $2"
+                lever_info = utils.lever_info[fish_species.lever]
+                
+                await db(
+                    db_call.format(fish_species.lever, 
+                            lever_info[0]*int(user_fish_data['level']/lever_info[1][rarities.index(fish_species.rarity)])), 
+                            user_settings[0][fish_species.lever], 
+                            ctx.author.id
+                )
+                await db(
+                    """UPDATE user_fish_inventory SET in_tank = False WHERE user_id = $1 and species = $2""",
+                    ctx.author.id,
+                    fish.replace(" ", "_").lower()
+                )
+                await db(
+                    """UPDATE user_settings SET sand_dollars = sand_dollars - 25 WHERE user_id = $1""",
+                    ctx.author.id
+                )
+            await ctx.send("Successfully removed fish from tank.")
+        elif chosen_button == "change_skin":
+            skin_options = ["Normal"]
+            async with vbu.Database() as db:
+                skins = await db("""SELECT * FROM user_skin_inventory WHERE user_id = $1 AND fish = $2""",
+                                 ctx.author.id,
+                                 fish_species.name)
+                for skin in skins:
+                    skin_options.append(skin['name'])
+                skin = await utils.create_select_menu(ctx.bot, ctx, skin_options, "skin", "select", True)
+                if skin in skin_options:
+                    await db("""UPDATE user_fish_inventory SET skin = $1 WHERE user_id = $2 AND species = $3""",
+                             skin,
+                             ctx.author.id,
+                             fish_species.name)
+                    await db("""UPDATE user_skin_inventory SET equipped = TRUE WHERE user_id = $1 AND name = $2 AND fish = $3""",
+                             ctx.author.id,
+                             skin,
+                             fish_species.name)
+        await info_message.edit(components=components.disable_components())
+    except asyncio.TimeoutError:
+        await info_message.edit(components=components.disable_components())
+    
 
 
 async def create_images(fish: list[typing.Any], settings: list[typing.Any]) -> list[PngImagePlugin.PngImageFile]:
+
     room = settings[0]['tank_room']
     tanks = []
     tank_images = []
-    fish_placements = [(100,100), (500,100), (400, 400), (600,400), (100,300)]
+    fish_placements = [(150,150), (500,150), (300, 300), (500,400), (100,300)]
     fish_path = "C:\\Users\\johnt\\Pictures\\fish"
     for single_room in range(room):
         if single_room < len(fish):
@@ -429,13 +584,16 @@ async def create_images(fish: list[typing.Any], settings: list[typing.Any]) -> l
                 tanks[int(single_room / 5)].append(fish[single_room])
     for tank in tanks:
         background = Image.open(
-                f"{fish_path}\\tank_backgrounds\\test.png"
+                f"{fish_path}\\tank_backgrounds\\default.png"
             )
         fish_images = []
         for num, fish in enumerate(tank):
-            background.paste(Image.open(f"{fish_path}\\{_Fish_Species.get_fish(fish['species']).rarity}\\{fish['species']}.png"), 
+            fish_image = f"{fish_path}\\{_Fish_Species.get_fish(fish['species']).rarity}\\{fish['species']}.png"
+            if fish['skin'] != "Normal":
+                fish_image = fish_path+"\\skins\\"+fish['skin']+"\\"+_Fish_Species.get_fish(fish['species']).name+"_"+fish['skin'].lower()+".png"
+            background.paste(Image.open(fish_image), 
                              (fish_placements[num][0], fish_placements[num][1]), 
-                             Image.open(f"{fish_path}\\{_Fish_Species.get_fish(fish['species']).rarity}\\{fish['species']}.png")
+                             Image.open(fish_image)
                             )
         tank_images.append(background)
     
@@ -458,3 +616,10 @@ async def create_tank_embed(ctx: vbu.SlashContext, bot: vbu.Bot, fish: list[typi
         else:
             break
     await ctx.send(embed=embed, file=tank_file)
+
+async def add_user(ctx):
+    async with vbu.Database() as db:
+        await db("""INSERT INTO user_settings(user_id) VALUES ($1)""",
+                 ctx.author.id)
+        await db("""INSERT INTO user_item_inventory(user_id) VALUES ($1)""",
+                 ctx.author.id)

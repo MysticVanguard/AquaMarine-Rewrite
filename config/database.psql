@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS user_settings (
     sand_dollars INT DEFAULT 0,
     doubloons INT DEFAULT 0,
     passive_sand_dollars INT DEFAULT 0,
-    shop_discount_multiplier INT DEFAULT 0,
     max_quests INT DEFAULT 3,
     quest_reward_multiplier INT DEFAULT 100,
     current_tool TEXT DEFAULT 'fishing_rod',
@@ -42,17 +41,12 @@ CREATE TABLE IF NOT EXISTS user_settings (
     rod_double_fish_chance INT DEFAULT 0,
     rarity_increase_tier INT DEFAULT 1,
     rod_bait_consumption_chance INT DEFAULT 100,
-    rare_lock_time INT DEFAULT 60,
-    epic_lock_time INT DEFAULT 300,
-    legendary_lock_time INT DEFAULT 600,
     current_energy INT DEFAULT 100,
     max_energy INT DEFAULT 100,
-    energy_refresh INT DEFAULT 60,
     energy_cost INT DEFAULT 10,
     bait_given_multiplier INT DEFAULT 100,
-    passive_energy INT DEFAULT 0,
+    passive_energy INT DEFAULT 50,
     energy_refund_chance INT DEFAULT 0,   
-    fish_bucket_room INT DEFAULT 5,
     tank_room INT DEFAULT 1,
     hp_increase INT DEFAULT 0,
     hp_percent INT DEFAULT 100,
@@ -66,12 +60,15 @@ CREATE TABLE IF NOT EXISTS user_settings (
     mr_percent INT DEFAULT 100,
     crit_chance_percent INT DEFAULT 25,
     crit_damage_increase INT DEFAULT 125,
-    attack_pen_increase INT DEFAULT 0,
-    magic_pen_increase INT DEFAULT 0,
-    lifesteal_percent INT DEFAULT 0,
-    mana_regen_increase INT DEFAULT 0,
     haste_increase INT DEFAULT 0,
     fish_xp INT DEFAULT 1,
+    user_rank TEXT DEFAULT 'Iron 1',
+    user_rp INT DEFAULT 0,
+    user_mmr INT DEFAULT 0,
+    draft_round INT DEFAULT 0,
+    draft_level INT DEFAULT 0,
+    draft_fish_amount INT DEFAULT 0,
+    draft_item_amount INT DEFAULT 0,
     PRIMARY KEY (user_id)
 );
 
@@ -85,7 +82,7 @@ CREATE TABLE IF NOT EXISTS user_fish_inventory (
     in_tank BOOLEAN DEFAULT FALSE,
     item TEXT DEFAULT '',
     in_team BOOLEAN DEFAULT FALSE,
-    team_number INT DEFAULT 0
+    skin TEXT DEFAULT 'Normal'
 );
 
 CREATE TABLE IF NOT EXISTS user_item_inventory (
@@ -100,5 +97,46 @@ CREATE TABLE IF NOT EXISTS user_item_inventory (
     epic_xp_orb INT DEFAULT 0,
     legendary_xp_orb INT DEFAULT 0,
     mythic_xp_orb INT DEFAULT 0,
+    coral INT DEFAULT 0,
+    shell INT DEFAULT 0,
+    crab_claw INT DEFAULT 0,
+    pebble INT DEFAULT 0,
+    scale INT DEFAULT 0,
+    seaweed INT DEFAULT 0,
+    tire INT DEFAULT 0,
+    plastic_bag INT DEFAULT 0,
+    boot INT DEFAULT 0,
     PRIMARY KEY (user_id)
 )
+
+CREATE TABLE IF NOT EXISTS user_quests (
+    user_id BIGINT,
+    quest_rarity TEXT,
+    fish_species TEXT,
+    amount INT DEFAULT 0,
+    total_amount INT,
+    orb_type TEXT,
+    orb_amount INT,
+    sand_dollars INT,
+    time_given TIMESTAMP,
+    time_expires TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_skin_inventory (
+    user_id BIGINT,
+    name TEXT,
+    fish TEXT,
+    tier TEXT,
+    equipped BOOLEAN
+);
+
+CREATE TABLE IF NOT EXISTS user_draft_fish (
+    user_id BIGINT,
+    name TEXT,
+    species TEXT,
+    level INT DEFAULT 1,
+    current_xp INT DEFAULT 0,
+    max_xp INT DEFAULT 5,
+    item TEXT DEFAULT '',
+    skin TEXT DEFAULT 'Normal'
+);
